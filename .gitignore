@@ -1,0 +1,17 @@
+/Backend/.env
+/Backend/vendor/
+/Backend/.phpunit.cache/
+/Backend/storage/*.key
+/Backend/bootstrap/cache/*.php
+/Backend/storage/framework/*
+!/Backend/storage/framework/**/.gitkeep
+/Backend/storage/logs/*
+!/Backend/storage/logs/.gitkeep
+/Frontend/.dart_tool/
+/Frontend/build/
+/Frontend/.flutter-plugins*
+/Frontend/android/.gradle/
+/Frontend/android/local.properties
+/Frontend/ios/Flutter/Generated.xcconfig
+/Frontend/ios/Flutter/flutter_export_environment.sh
+*.xlsx
