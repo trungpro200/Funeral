@@ -4,8 +4,8 @@ The app provides customer sign-in/registration, funeral service browsing and boo
 
 ## Run
 
-1. Ensure the Laravel API is reachable from the device/emulator. Android emulator uses `10.0.2.2` to access the host machine.
+1. Ensure the Laravel API is reachable from the device. Android defaults to `http://192.168.1.53:8000/api/v1`; change it with `--dart-define=API_BASE=http://HOST:8000/api/v1` when using another address. Android emulator users can set `HOST` to `10.0.2.2`.
 2. From this directory run `flutter pub get`, then `flutter run`.
-3. To use another API host, pass `--dart-define=API_BASE=http://HOST:8000/api/v1`.
+3. The local PHP development server uses plain HTTP. Use HTTPS with a trusted certificate for deployment.
 
-For a physical Android device, use the computer's LAN IP and allow inbound connections to port 8000. Plain HTTP is intended for local development; use HTTPS for deployment.
+Keep the phone and computer on the same network and allow inbound connections to port 8000.

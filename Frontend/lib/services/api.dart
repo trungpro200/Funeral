@@ -3,11 +3,12 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 
 const apiBaseOverride = String.fromEnvironment('API_BASE');
+// Override with --dart-define=API_BASE=... when using a different host.
 final apiBase = apiBaseOverride.isNotEmpty
     ? apiBaseOverride
     : kIsWeb
         ? 'http://127.0.0.1:8000/api/v1'
-        : 'http://10.0.2.2:8000/api/v1';
+        : 'http://192.168.1.53:8000/api/v1';
 
 class Api {
   String? token;
