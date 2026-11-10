@@ -8,7 +8,7 @@ final apiBase = apiBaseOverride.isNotEmpty
     ? apiBaseOverride
     : kIsWeb
         ? 'http://127.0.0.1:8000/api/v1'
-        : 'http://192.168.1.53:8000/api/v1';
+        : 'https://192.168.1.53/api/v1';
 
 class Api {
   String? token;

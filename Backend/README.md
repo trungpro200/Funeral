@@ -17,7 +17,7 @@ REST API for the funeral service booking and casket ordering MVP. API prefix: `/
 
 The demo accounts are `admin@example.com` / `password` and `staff@example.com` / `password`. Replace these before deployment.
 
-`php artisan serve` provides HTTP only; this local setup does not configure TLS certificates or an HTTPS listener. Terminate HTTPS at a web server or reverse proxy with a trusted certificate before deployment.
+For local phone testing, use the Laragon Apache HTTPS virtual host described in the project root README. `php artisan serve` provides HTTP only. The included local CA is development-only; use a publicly trusted certificate for deployment.
 
 ## Backend feature tests
 

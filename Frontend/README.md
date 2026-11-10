@@ -4,8 +4,8 @@ The app provides customer sign-in/registration, funeral service browsing and boo
 
 ## Run
 
-1. Ensure the Laravel API is reachable from the device. Android defaults to `http://192.168.1.53:8000/api/v1`; change it with `--dart-define=API_BASE=http://HOST:8000/api/v1` when using another address. Android emulator users can set `HOST` to `10.0.2.2`.
+1. Ensure the Laragon Apache backend is reachable from the device. Android defaults to `https://192.168.1.53/api/v1`; override it with `--dart-define=API_BASE=https://HOST/api/v1`. The Android debug build trusts the local development CA bundled in `android/app/src/debug/res/raw`; this certificate is only for local development. Android emulator users can set `HOST` to `10.0.2.2` after issuing a matching local certificate.
 2. From this directory run `flutter pub get`, then `flutter run`.
-3. The local PHP development server uses plain HTTP. Use HTTPS with a trusted certificate for deployment.
+3. For local HTTPS, see the Laragon TLS setup in the project root README. Release builds trust system CAs only. Use a publicly trusted certificate for deployment.
 
-Keep the phone and computer on the same network and allow inbound connections to port 8000.
+Keep the phone and computer on the same network and allow inbound connections to port 443.
