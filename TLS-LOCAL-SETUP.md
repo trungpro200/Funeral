@@ -4,6 +4,14 @@ The copy at `C:\laragon\www\Backend` is served by Laragon Apache at `https://192
 
 To recreate the certificates, use Laragon’s OpenSSL executable and the config files in `C:\laragon\etc\ssl\funeral-local`. Add SANs for any new hostnames/IPs before regenerating the server certificate. Import `root-ca.crt` into the Windows Current User Trusted Root Certification Authorities store if Windows tools/browsers need to trust it. Android debug builds trust the bundled root automatically. Remove the root CA from that store and rotate/delete the local key pair when no longer needed.
 
-Apache’s `auto.Backend.test.conf` and default SSL vhost point to `backend-ip.crt` and `backend-ip.key`. The default SSL vhost uses this certificate because clients connecting by IP may not send SNI. The `Backend.test` vhost has `192.168.1.53` as an alias and serves Laravel’s `public` directory. Ensure Windows Firewall allows inbound TCP 443 on the private network.
+Apache’s `auto.Backend.test.conf` and default SSL vhost point to `backend-ip.crt` and `backend-ip.key`. The default SSL vhost uses this certificate because clients connecting by IP may not send SNI. The `Backend.test` vhost has `192.168.1.53` as an alias and serves Laravel’s `public` directory. If the phone cannot connect, open PowerShell as Administrator and add a rule scoped to this machine’s local subnet:
+
+```powershell
+New-NetFirewallRule -DisplayName 'Funeral Care Laragon HTTPS (local subnet)' `
+  -Direction Inbound -Action Allow -Protocol TCP -LocalPort 443 `
+  -RemoteAddress LocalSubnet `
+  -Program 'C:\laragon\bin\apache\httpd-2.4.66-260223-Win64-VS18\bin\httpd.exe' `
+  -Profile Any
+```
 
 This is a self-managed development CA, not a public certificate. Do not use these keys or trust settings for production. The Android release variant uses normal system trust and disallows cleartext HTTP; the debug variant allows local HTTP for development tools and trusts the local CA.
