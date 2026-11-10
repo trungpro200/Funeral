@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
+import 'api_http_client.dart';
 
 const apiBaseOverride = String.fromEnvironment('API_BASE');
 // Override with --dart-define=API_BASE=... when using a different host.
@@ -12,6 +13,10 @@ final apiBase = apiBaseOverride.isNotEmpty
 
 class Api {
   String? token;
+  Future<http.Client>? _httpClient;
+
+  Future<http.Client> get _client =>
+      _httpClient ??= createApiHttpClient();
 
   Future<dynamic> call(String path,
       {String method = 'GET',
@@ -23,11 +28,12 @@ class Api {
       if (auth && token != null) 'Authorization': 'Bearer $token'
     };
     final uri = Uri.parse('$apiBase/$path');
+    final client = await _client;
     final response = await (method == 'POST'
-            ? http.post(uri, headers: headers, body: jsonEncode(data))
+            ? client.post(uri, headers: headers, body: jsonEncode(data))
             : method == 'PATCH'
-                ? http.patch(uri, headers: headers, body: jsonEncode(data))
-                : http.get(uri, headers: headers))
+                ? client.patch(uri, headers: headers, body: jsonEncode(data))
+                : client.get(uri, headers: headers))
         .timeout(const Duration(seconds: 20));
     final body = response.body.isEmpty ? {} : jsonDecode(response.body);
     if (response.statusCode < 200 || response.statusCode >= 300) {
