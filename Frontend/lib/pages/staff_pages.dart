@@ -12,11 +12,14 @@ class StaffBookingsPage extends StatefulWidget {
 class _StaffBookingsPageState extends State<StaffBookingsPage> {
   List items = [];
   bool loading = true;
+  String? loadError;
   Future<void> load() async {
     try {
       final r = await api.call('staff/bookings');
       items = List.from(r['data'] ?? []);
+      loadError = null;
     } catch (e) {
+      loadError = '$e';
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$e')));
@@ -69,35 +72,41 @@ class _StaffBookingsPageState extends State<StaffBookingsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => loading
-      ? const Center(child: CircularProgressIndicator())
-      : RefreshIndicator(
-          onRefresh: load,
-          child: ListView(
-              children: items
-                  .map((b) => Card(
-                      child: ListTile(
-                          title: Text(b['service']?['name'] ?? 'Booking'),
-                          subtitle: Text(
-                              '${b['user']?['name'] ?? ''} · ${b['requested_at']}\n${b['location']} · ${b['status']}'),
-                          isThreeLine: true,
-                          trailing: PopupMenuButton<String>(
-                              onSelected: (s) => update(b, s),
-                              itemBuilder: (c) => const [
-                                    PopupMenuItem(
-                                        value: 'confirmed',
-                                        child: Text('Confirm')),
-                                    PopupMenuItem(
-                                        value: 'proposed',
-                                        child: Text('Propose new time')),
-                                    PopupMenuItem(
-                                        value: 'completed',
-                                        child: Text('Complete')),
-                                    PopupMenuItem(
-                                        value: 'cancelled',
-                                        child: Text('Cancel'))
-                                  ]))))
-                  .toList()));
+  Widget build(BuildContext context) => _StaffPageLayout(
+        title: 'Service booking desk',
+        description:
+            'Coordinate service requests, confirm arrangements, and propose a new time when needed.',
+        icon: Icons.event_available_outlined,
+        count: items.length,
+        countLabel: 'requests',
+        loading: loading,
+        error: loadError,
+        onRefresh: load,
+        emptyIcon: Icons.event_note_outlined,
+        emptyTitle: 'No service bookings yet',
+        emptyMessage:
+            'New customer booking requests will appear here for review.',
+        children: [
+          for (final b in items)
+            Card(
+                child: ListTile(
+              title: Text(b['service']?['name'] ?? 'Booking'),
+              subtitle: Text(
+                  '${b['user']?['name'] ?? ''} | ${b['requested_at']}\n${b['location']} | ${b['status']}'),
+              isThreeLine: true,
+              trailing: PopupMenuButton<String>(
+                onSelected: (status) => update(b, status),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'confirmed', child: Text('Confirm')),
+                  PopupMenuItem(
+                      value: 'proposed', child: Text('Propose new time')),
+                  PopupMenuItem(value: 'completed', child: Text('Complete')),
+                  PopupMenuItem(value: 'cancelled', child: Text('Cancel')),
+                ],
+              ),
+            )),
+        ],
+      );
 }
 
 class StaffOrdersPage extends StatefulWidget {
@@ -109,11 +118,14 @@ class StaffOrdersPage extends StatefulWidget {
 class _StaffOrdersPageState extends State<StaffOrdersPage> {
   List items = [];
   bool loading = true;
+  String? loadError;
   Future<void> load() async {
     try {
       final r = await api.call('staff/orders');
       items = List.from(r['data'] ?? []);
+      loadError = null;
     } catch (e) {
+      loadError = '$e';
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$e')));
@@ -143,38 +155,40 @@ class _StaffOrdersPageState extends State<StaffOrdersPage> {
   }
 
   @override
-  Widget build(BuildContext context) => loading
-      ? const Center(child: CircularProgressIndicator())
-      : RefreshIndicator(
-          onRefresh: load,
-          child: ListView(
-              children: items
-                  .map((o) => Card(
-                          child: ListTile(
-                        title:
-                            Text(o['casket']?['name'] ?? 'Order #${o['id']}'),
-                        subtitle: Text(
-                            '${o['user']?['name'] ?? ''} - ${o['total_estimate']} VND\n${o['status']}'),
-                        isThreeLine: true,
-                        trailing: PopupMenuButton<String>(
-                            onSelected: (s) => update(o, s),
-                            itemBuilder: (c) => const [
-                                  PopupMenuItem(
-                                      value: 'confirmed',
-                                      child: Text('Confirm')),
-                                  PopupMenuItem(
-                                      value: 'preparing',
-                                      child: Text('Preparing')),
-                                  PopupMenuItem(
-                                      value: 'completed',
-                                      child: Text('Complete')),
-                                  PopupMenuItem(
-                                      value: 'cancelled',
-                                      child: Text('Cancel')),
-                                ]),
-                      )))
-                  .toList()),
-        );
+  Widget build(BuildContext context) => _StaffPageLayout(
+        title: 'Casket order desk',
+        description:
+            'Track customer purchases from confirmation through preparation and completion.',
+        icon: Icons.inventory_2_outlined,
+        count: items.length,
+        countLabel: 'orders',
+        loading: loading,
+        error: loadError,
+        onRefresh: load,
+        emptyIcon: Icons.shopping_bag_outlined,
+        emptyTitle: 'No casket orders yet',
+        emptyMessage:
+            'Customer orders will appear here with their selected casket and contact details.',
+        children: [
+          for (final order in items)
+            Card(
+                child: ListTile(
+              title: Text(order['casket']?['name'] ?? 'Order #${order['id']}'),
+              subtitle: Text(
+                  '${order['user']?['name'] ?? ''} | ${formatMoney(order['total_estimate'])} VND\nStatus: ${order['status']}'),
+              isThreeLine: true,
+              trailing: PopupMenuButton<String>(
+                onSelected: (status) => update(order, status),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'confirmed', child: Text('Confirm')),
+                  PopupMenuItem(value: 'preparing', child: Text('Preparing')),
+                  PopupMenuItem(value: 'completed', child: Text('Complete')),
+                  PopupMenuItem(value: 'cancelled', child: Text('Cancel')),
+                ],
+              ),
+            )),
+        ],
+      );
 }
 
 class StaffCustomizationsPage extends StatefulWidget {
@@ -187,11 +201,14 @@ class StaffCustomizationsPage extends StatefulWidget {
 class _StaffCustomizationsPageState extends State<StaffCustomizationsPage> {
   List items = [];
   bool loading = true;
+  String? loadError;
   Future<void> load() async {
     try {
       final r = await api.call('staff/customization-requests');
       items = List.from(r['data'] ?? []);
+      loadError = null;
     } catch (e) {
+      loadError = '$e';
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$e')));
@@ -258,32 +275,40 @@ class _StaffCustomizationsPageState extends State<StaffCustomizationsPage> {
   }
 
   @override
-  Widget build(BuildContext context) => loading
-      ? const Center(child: CircularProgressIndicator())
-      : RefreshIndicator(
-          onRefresh: load,
-          child: ListView(
-              children: items
-                  .map((r) => Card(
-                          child: ListTile(
-                        title: Text(r['casket']?['name'] ??
-                            'Customization #${r['id']}'),
-                        subtitle: Text(
-                            '${r['user']?['name'] ?? ''} · ${r['status']}\n${jsonEncode(r['configuration'] ?? {})} ${r['notes'] ?? ''}'),
-                        isThreeLine: true,
-                        trailing: PopupMenuButton<String>(
-                            onSelected: (s) => review(r, s),
-                            itemBuilder: (c) => const [
-                                  PopupMenuItem(
-                                      value: 'confirmed',
-                                      child: Text('Confirm and quote')),
-                                  PopupMenuItem(
-                                      value: 'rejected',
-                                      child: Text('Decline')),
-                                ]),
-                      )))
-                  .toList()),
-        );
+  Widget build(BuildContext context) => _StaffPageLayout(
+        title: 'Customization review',
+        description:
+            'Review requested options, prepare a quote, and set a lead time for the family.',
+        icon: Icons.tune,
+        count: items.length,
+        countLabel: 'requests',
+        loading: loading,
+        error: loadError,
+        onRefresh: load,
+        emptyIcon: Icons.design_services_outlined,
+        emptyTitle: 'No custom requests to review',
+        emptyMessage:
+            'Customer casket configurations will appear here when submitted.',
+        children: [
+          for (final request in items)
+            Card(
+                child: ListTile(
+              title: Text(request['casket']?['name'] ??
+                  'Customization #${request['id']}'),
+              subtitle: Text(
+                  '${request['user']?['name'] ?? ''} | ${request['status']}\n${jsonEncode(request['configuration'] ?? {})} ${request['notes'] ?? ''}'),
+              isThreeLine: true,
+              trailing: PopupMenuButton<String>(
+                onSelected: (status) => review(request, status),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                      value: 'confirmed', child: Text('Confirm and quote')),
+                  PopupMenuItem(value: 'rejected', child: Text('Decline')),
+                ],
+              ),
+            )),
+        ],
+      );
 }
 
 class ManageCatalogPage extends StatefulWidget {
@@ -296,12 +321,15 @@ class ManageCatalogPage extends StatefulWidget {
 class _ManageCatalogPageState extends State<ManageCatalogPage> {
   List items = [];
   bool loading = true;
+  String? loadError;
   String get path => widget.type;
   Future<void> load() async {
     try {
       final r = await api.call(path, auth: false);
       items = List.from(r['data'] ?? []);
+      loadError = null;
     } catch (e) {
+      loadError = '$e';
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$e')));
@@ -420,33 +448,195 @@ class _ManageCatalogPageState extends State<ManageCatalogPage> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        floatingActionButton: FloatingActionButton(
-            onPressed: () => edit(), child: const Icon(Icons.add)),
-        body: loading
-            ? const Center(child: CircularProgressIndicator())
-            : RefreshIndicator(
-                onRefresh: load,
-                child: ListView(
-                    children: items
-                        .map((item) => Card(
-                                child: ListTile(
-                              title: Text(item['name'] ?? ''),
-                              subtitle: Text(
-                                  '${item['description'] ?? ''}\n${formatMoney(item[widget.type == 'services' ? 'price_from' : 'price'])} VND'),
-                              isThreeLine: true,
-                              trailing: PopupMenuButton<String>(
-                                  onSelected: (v) =>
-                                      v == 'edit' ? edit(item) : disable(item),
-                                  itemBuilder: (c) => const [
-                                        PopupMenuItem(
-                                            value: 'edit', child: Text('Edit')),
-                                        PopupMenuItem(
-                                            value: 'disable',
-                                            child: Text('Mark unavailable')),
-                                      ]),
-                            )))
-                        .toList()),
+  Widget build(BuildContext context) {
+    final isService = widget.type == 'services';
+    return Scaffold(
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => edit(),
+        icon: const Icon(Icons.add),
+        label: Text(isService ? 'Add service' : 'Add casket'),
+      ),
+      body: _StaffPageLayout(
+        title: isService ? 'Service catalog' : 'Casket catalog',
+        description: isService
+            ? 'Keep descriptions and starting prices up to date for families.'
+            : 'Manage casket details and pricing shown in the customer catalog.',
+        icon: isService ? Icons.spa_outlined : Icons.inventory_2_outlined,
+        count: items.length,
+        countLabel: isService ? 'services' : 'caskets',
+        loading: loading,
+        error: loadError,
+        onRefresh: load,
+        emptyIcon: isService ? Icons.spa_outlined : Icons.inventory_2_outlined,
+        emptyTitle: isService
+            ? 'No services in the catalog'
+            : 'No caskets in the catalog',
+        emptyMessage: isService
+            ? 'Add a service to make it available to customers.'
+            : 'Add a casket to make it available to customers.',
+        children: [
+          for (final item in items)
+            Card(
+                child: ListTile(
+              leading: isService
+                  ? const CircleAvatar(child: Icon(Icons.spa_outlined))
+                  : _StaffCasketThumbnail(imagePath: item['image_url']),
+              title: Text(item['name'] ?? ''),
+              subtitle: Text(
+                  '${item['description'] ?? ''}\n${formatMoney(item[isService ? 'price_from' : 'price'])} VND'),
+              isThreeLine: true,
+              trailing: PopupMenuButton<String>(
+                onSelected: (action) =>
+                    action == 'edit' ? edit(item) : disable(item),
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'edit', child: Text('Edit')),
+                  PopupMenuItem(
+                      value: 'disable', child: Text('Mark unavailable')),
+                ],
               ),
+            )),
+        ],
+      ),
+    );
+  }
+}
+
+class _StaffPageLayout extends StatelessWidget {
+  final String title;
+  final String description;
+  final IconData icon;
+  final int count;
+  final String countLabel;
+  final bool loading;
+  final String? error;
+  final Future<void> Function() onRefresh;
+  final IconData emptyIcon;
+  final String emptyTitle;
+  final String emptyMessage;
+  final List<Widget> children;
+
+  const _StaffPageLayout({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.count,
+    required this.countLabel,
+    required this.loading,
+    required this.error,
+    required this.onRefresh,
+    required this.emptyIcon,
+    required this.emptyTitle,
+    required this.emptyMessage,
+    required this.children,
+  });
+
+  @override
+  Widget build(BuildContext context) => RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 88),
+          children: [
+            Card(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(18),
+                child: Row(children: [
+                  CircleAvatar(
+                    radius: 27,
+                    backgroundColor: Theme.of(context).colorScheme.surface,
+                    child: Icon(icon, size: 28),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                      child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                        Text(title,
+                            style: Theme.of(context).textTheme.titleLarge),
+                        const SizedBox(height: 4),
+                        Text(description),
+                      ])),
+                ]),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Card(
+                child: ListTile(
+              leading: const Icon(Icons.inbox_outlined),
+              title: Text('$count $countLabel'),
+              subtitle: const Text('Pull down to refresh the latest activity.'),
+              trailing: IconButton(
+                  tooltip: 'Refresh',
+                  onPressed: onRefresh,
+                  icon: const Icon(Icons.refresh)),
+            )),
+            const SizedBox(height: 16),
+            if (loading && children.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(28),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (error != null && children.isEmpty)
+              Card(
+                  child: ListTile(
+                leading: const Icon(Icons.cloud_off_outlined),
+                title: const Text('Could not load this page'),
+                subtitle: Text(error!),
+                trailing: IconButton(
+                    onPressed: onRefresh, icon: const Icon(Icons.refresh)),
+              ))
+            else if (children.isEmpty)
+              Card(
+                  child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(children: [
+                  Icon(emptyIcon,
+                      size: 42, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(height: 10),
+                  Text(emptyTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      textAlign: TextAlign.center),
+                  const SizedBox(height: 6),
+                  Text(emptyMessage, textAlign: TextAlign.center),
+                ]),
+              ))
+            else ...[
+              Text('Recent activity',
+                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 8),
+              ...children,
+            ],
+          ],
+        ),
       );
+}
+
+class _StaffCasketThumbnail extends StatelessWidget {
+  final String? imagePath;
+  const _StaffCasketThumbnail({required this.imagePath});
+
+  @override
+  Widget build(BuildContext context) {
+    if (imagePath == null || imagePath!.isEmpty) {
+      return const CircleAvatar(child: Icon(Icons.inventory_2_outlined));
+    }
+    final uri = Uri.parse(apiBase).replace(
+      path: '/${imagePath!.replaceFirst(RegExp(r'^/+'), '')}',
+      query: null,
+      fragment: null,
+    );
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 56,
+        height: 56,
+        child: Image.network(
+          uri.toString(),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stack) =>
+              const Icon(Icons.inventory_2_outlined),
+        ),
+      ),
+    );
+  }
 }

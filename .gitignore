@@ -11,6 +11,7 @@
 /Frontend/build/
 /Frontend/.flutter-plugins*
 /Frontend/android/.gradle/
+/Frontend/android/.kotlin/
 /Frontend/android/local.properties
 /Frontend/ios/Flutter/Generated.xcconfig
 /Frontend/ios/Flutter/flutter_export_environment.sh

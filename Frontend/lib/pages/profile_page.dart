@@ -160,7 +160,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 const _HelpStep(
                     number: '3',
                     title: 'Follow progress',
-                    detail: 'Check your Bookings and Orders tabs for updates.'),
+                    detail:
+                        'Check the Orders tab for service booking and casket order updates.'),
               ]),
             ),
           ])),

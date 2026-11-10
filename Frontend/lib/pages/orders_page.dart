@@ -287,11 +287,18 @@ class RequestListPage extends StatefulWidget {
 class _RequestListPageState extends State<RequestListPage> {
   List items = [];
   bool loading = true;
+  String? loadError;
+
   Future<void> load() async {
+    setState(() {
+      loading = true;
+      loadError = null;
+    });
     try {
       final r = await api.call(widget.type);
       items = List.from(r['data'] ?? []);
     } catch (e) {
+      loadError = '$e';
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$e')));
@@ -308,24 +315,209 @@ class _RequestListPageState extends State<RequestListPage> {
   }
 
   @override
-  Widget build(BuildContext context) => loading
-      ? const Center(child: CircularProgressIndicator())
-      : RefreshIndicator(
-          onRefresh: load,
-          child: items.isEmpty
-              ? ListView(children: [
-                  const SizedBox(height: 180),
-                  Center(child: Text('No ${widget.type} yet'))
-                ])
-              : ListView(
-                  children: items
-                      .map((e) => Card(
-                          child: ListTile(
-                              title: Text(e['service']?['name'] ??
-                                  e['casket']?['name'] ??
-                                  'Request #${e['id']}'),
-                              subtitle: Text(
-                                  '${e['requested_at'] ?? ''}\nStatus: ${e['status']}${e['proposed_at'] == null ? '' : '\nProposed: ${e['proposed_at']}'}'),
-                              isThreeLine: true)))
-                      .toList()));
+  Widget build(BuildContext context) {
+    final pending = items.where((item) =>
+        (item['status'] ?? 'pending_confirmation') == 'pending_confirmation');
+    final quoted = items.where((item) => item['status'] == 'confirmed');
+    final declined = items.where((item) => item['status'] == 'rejected');
+
+    return RefreshIndicator(
+      onRefresh: load,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        children: [
+          Card(
+            color: Theme.of(context).colorScheme.primaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Icon(Icons.design_services_outlined,
+                    size: 34, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 14),
+                Expanded(
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('Make it personal',
+                          style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 6),
+                      const Text(
+                          'Choose a casket in the catalog, select the details that matter to you, and send a customization request for a staff quote.'),
+                    ])),
+              ]),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(children: [
+            Expanded(
+                child: _CustomizationCountCard(
+                    label: 'Awaiting review',
+                    count: pending.length,
+                    color: Theme.of(context).colorScheme.tertiaryContainer)),
+            const SizedBox(width: 8),
+            Expanded(
+                child: _CustomizationCountCard(
+                    label: 'Quoted',
+                    count: quoted.length,
+                    color: Theme.of(context).colorScheme.primaryContainer)),
+            const SizedBox(width: 8),
+            Expanded(
+                child: _CustomizationCountCard(
+                    label: 'Declined',
+                    count: declined.length,
+                    color:
+                        Theme.of(context).colorScheme.surfaceContainerHighest)),
+          ]),
+          const SizedBox(height: 20),
+          Text('How custom requests work',
+              style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          const Card(
+              child: Column(children: [
+            _CustomizationStep(
+                number: '1',
+                title: 'Choose options',
+                detail:
+                    'Pick the available material, color, and size for a casket.'),
+            Divider(height: 1, indent: 58),
+            _CustomizationStep(
+                number: '2',
+                title: 'Our staff reviews it',
+                detail:
+                    'We check the configuration and prepare a price and lead time.'),
+            Divider(height: 1, indent: 58),
+            _CustomizationStep(
+                number: '3',
+                title: 'Review the quote',
+                detail: 'Your quote and request status will appear below.'),
+          ])),
+          const SizedBox(height: 20),
+          Text('Your requests', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          if (loading && items.isEmpty)
+            const Padding(
+                padding: EdgeInsets.all(28),
+                child: Center(child: CircularProgressIndicator()))
+          else if (loadError != null && items.isEmpty)
+            Card(
+                child: ListTile(
+              leading: const Icon(Icons.cloud_off_outlined),
+              title: const Text('Could not load your custom requests'),
+              subtitle: Text(loadError!),
+              trailing:
+                  IconButton(onPressed: load, icon: const Icon(Icons.refresh)),
+            ))
+          else if (items.isEmpty)
+            Card(
+                child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Column(children: [
+                Icon(Icons.tune,
+                    size: 40, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(height: 10),
+                Text('No custom requests yet',
+                    style: Theme.of(context).textTheme.titleMedium),
+                const SizedBox(height: 6),
+                const Text(
+                    'Open Caskets, choose Customize on a casket, and send us the options you have in mind.',
+                    textAlign: TextAlign.center),
+              ]),
+            ))
+          else
+            ...items.map(_customizationCard),
+        ],
+      ),
+    );
+  }
+
+  Widget _customizationCard(dynamic request) {
+    final status = (request['status'] ?? 'pending_confirmation').toString();
+    final configuration = request['configuration'] is Map
+        ? (request['configuration'] as Map)
+            .entries
+            .map((entry) => '${entry.key}: ${entry.value}')
+            .join(' · ')
+        : 'No options selected';
+    final statusLabel = switch (status) {
+      'pending_confirmation' => 'Awaiting review',
+      'confirmed' => 'Quote ready',
+      'rejected' => 'Declined',
+      _ => status,
+    };
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const CircleAvatar(child: Icon(Icons.inventory_2_outlined)),
+            const SizedBox(width: 12),
+            Expanded(
+                child: Text(
+                    request['casket']?['name'] ??
+                        'Custom request #${request['id']}',
+                    style: Theme.of(context).textTheme.titleMedium)),
+            Chip(label: Text(statusLabel)),
+          ]),
+          const SizedBox(height: 12),
+          Text(configuration),
+          if ((request['notes'] ?? '').toString().isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('Note: ${request['notes']}'),
+          ],
+          if (status == 'confirmed') ...[
+            const Divider(height: 22),
+            Row(children: [
+              const Icon(Icons.request_quote_outlined, size: 20),
+              const SizedBox(width: 8),
+              Expanded(
+                  child: Text(
+                      'Quote: ${formatMoney(request['quoted_price'])} VND')),
+              if (request['lead_time_days'] != null)
+                Text('${request['lead_time_days']} days'),
+            ]),
+          ],
+        ]),
+      ),
+    );
+  }
+}
+
+class _CustomizationCountCard extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _CustomizationCountCard(
+      {required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Card(
+        color: color,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('$count', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 2),
+            Text(label, style: Theme.of(context).textTheme.labelSmall),
+          ]),
+        ),
+      );
+}
+
+class _CustomizationStep extends StatelessWidget {
+  final String number;
+  final String title;
+  final String detail;
+  const _CustomizationStep(
+      {required this.number, required this.title, required this.detail});
+
+  @override
+  Widget build(BuildContext context) => ListTile(
+        leading: CircleAvatar(radius: 15, child: Text(number)),
+        title: Text(title),
+        subtitle: Text(detail),
+      );
 }
